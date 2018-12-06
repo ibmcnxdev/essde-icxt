@@ -474,12 +474,10 @@ icxtbar.util.getNls = function (cb) {
         },
         withCredentials : true
     };
-
-    // Call the asynchronous xhrGet
     dojo.xhrGet(xhrArgs);
 };
 var icxtbar = icxtbar || {};
-icxtbar.host = '';
+icxtbar.host = 'eds-consak-01.org.rettigicc.net';
 icxtbar.actions = icxtbar.actions || [];
 icxtbar.nls = icxtbar.nls || {};
 
