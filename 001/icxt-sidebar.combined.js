@@ -477,7 +477,7 @@ icxtbar.util.getNls = function (cb) {
     dojo.xhrGet(xhrArgs);
 };
 var icxtbar = icxtbar || {};
-icxtbar.host = 'eds-consak-01.org.rettigicc.net';
+icxtbar.host = 'https://eds-consak-01.org.rettigicc.net';
 icxtbar.actions = icxtbar.actions || [];
 icxtbar.nls = icxtbar.nls || {};
 
