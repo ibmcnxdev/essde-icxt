@@ -414,12 +414,12 @@ icxtbar.util.checkAuthenticated = function (cb) {
 
     // The parameters to pass to xhrGet, the url, how to handle it, and the callbacks.
     var xhrArgs = {
-        url : icxtbar.host + "/ic360/ui/cors/auth-internal",
+        url : icxtbar.host + "/ic360/ui/api/context/cors/whoami.json",
         withCredentials : true,
         load : function (data) {
-            if (data == null || data.indexOf('j_security_check') > 0) {
+            if (data == null || data.indexOf('j_security_check') > -1 || data.indexOf('<title>Login - ICXT</title>') > -1) {
                 if (dojo.config.isDebug) {
-                    console.log("icxt.util.checkAuthenticated < false - login to '" + icxtbar.host + "/ic360/ui/auth-internal' failed");
+                    console.log("icxt.util.checkAuthenticated < false - login to '" + icxtbar.host + "/ic360/ui/api/config/cors/whoami.json' failed");
                 }
                 // not authenticated - might have gotten login page as response
                 cb("noauth");
@@ -431,7 +431,7 @@ icxtbar.util.checkAuthenticated = function (cb) {
             }
         },
         error : function (data) {
-            cb(data);
+            cb("noauth");
         }
     };
 
@@ -474,6 +474,8 @@ icxtbar.util.getNls = function (cb) {
         },
         withCredentials : true
     };
+
+    // Call the asynchronous xhrGet
     dojo.xhrGet(xhrArgs);
 };
 var icxtbar = icxtbar || {};
@@ -548,6 +550,8 @@ if (typeof (dojo) != "undefined") {
                             if (dojo.config.isDebug) {
                                 console.log("icxt.ui.init - Not authenticated! start OAuth2 Login Flow");
                             }
+                            var sidebar = document.querySelector("#icxt-sidebar");
+                            sidebar.style.display = "block";
                             icxtbar.util.authenticate();
                             return;
                         }
