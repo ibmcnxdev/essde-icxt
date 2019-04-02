@@ -9,8 +9,7 @@ icxtbar.util.loadCSSCors = function (stylesheet_uri) {
     var has_cred = false;
     try {
         has_cred = _xhr && ('withCredentials' in (new _xhr()));
-    } catch (e) {
-    }
+    } catch (e) {}
 
     if (!has_cred) {
         return;
@@ -27,8 +26,7 @@ icxtbar.util.loadCSSCors = function (stylesheet_uri) {
             var style_tag = document.createElement('style');
             style_tag.appendChild(document.createTextNode(xhr.responseText));
             document.head.appendChild(style_tag);
-        }
-        ;
+        };
     }
     xhr.onerror = function () {
         xhr.onload = xhr.onerror = null;
@@ -38,6 +36,18 @@ icxtbar.util.loadCSSCors = function (stylesheet_uri) {
     };
     xhr.send();
 };
+
+icxtbar.util.checkCSSAccess = function (uri) {
+    var request = new XMLHttpRequest();
+    request.open('GET', uri, false);
+    request.send(); // there will be a 'pause' here until the response to come.
+    // the object request will be actually modified
+    if (request.status < 200 || request.status >= 300) {
+        return false;
+    } else {
+        return true;
+    }
+}
 
 icxtbar.util.getSidebarContainer = function (open) {
     var elem = null;
@@ -86,10 +96,18 @@ icxtbar.util.activateSidebar = function () {
             elem.className = elem.className.replace('empty', '');
         }
     }
+
     elem.onclick = function (evt) {
         evt.preventDefault();
+
+        var _navbarEl = document.querySelector('.ics-scbanner');
+        if (_navbarEl && _navbarEl.offsetHeight != icxtbar.util.__navbarHeight) {
+            icxtbar.util.__navbarHeight = _navbarEl.offsetHeight;
+        }
+
         var elem = icxtbar.util.getSidebarContainer(true);
         elem.style.width = "400px";
+        elem.style.top = icxtbar.util.__navbarHeight + 'px';
         elem.focus();
     }
 
@@ -122,14 +140,14 @@ icxtbar.util.showEmptySidebar = function () {
 icxtbar.util.loadSidebarClosedTitle = function () {
     var elem = icxtbar.util.getSidebarContainer(false);
     var translateObject = {
-        actionSize : icxtbar.actions ? icxtbar.actions.length : '0'
+        actionSize: icxtbar.actions ? icxtbar.actions.length : '0'
     }
     var elemTitle = icxtbar.util.translate('actionsavailable.title', translateObject);
     elem.title = elemTitle;
 }
 
-icxtbar.util.getURLParameter = function (/* string */name) {
-    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [ , "" ])[1].replace(/\+/g, '%20')) || null;
+icxtbar.util.getURLParameter = function ( /* string */ name) {
+    return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [, ""])[1].replace(/\+/g, '%20')) || null;
 };
 
 icxtbar.util.loadConfig = function (data) {
@@ -220,8 +238,8 @@ icxtbar.util.addAction = function (action, context) {
     var contextUuid = "" || context.uuid;
 
     // in case the is an & in the UUID, this must be encoded
-    if(contextUuid.indexOf('&')) {
-      contextUuid = contextUuid.replace("&", "%26");
+    if (contextUuid.indexOf('&')) {
+        contextUuid = contextUuid.replace("&", "%26");
     }
 
     var replacementMap = {};
@@ -297,7 +315,12 @@ icxtbar.util.addAction = function (action, context) {
 };
 
 icxtbar.util.addIFrameDialog = function (label, uri) {
-    var w = window, d = document, e = d.documentElement, g = d.getElementsByTagName('body')[0], windowX = w.innerWidth || e.clientWidth || g.clientWidth, windowY = w.innerHeight || e.clientHeight || g.clientHeight;
+    var w = window,
+        d = document,
+        e = d.documentElement,
+        g = d.getElementsByTagName('body')[0],
+        windowX = w.innerWidth || e.clientWidth || g.clientWidth,
+        windowY = w.innerHeight || e.clientHeight || g.clientHeight;
 
     windowX = windowX * 0.9;
     windowY = windowY * 0.8;
@@ -307,8 +330,7 @@ icxtbar.util.addIFrameDialog = function (label, uri) {
     }
     if (windowY < 550) {
         windowY = 550;
-    }
-    ;
+    };
 
     var dialogHtml = "<div aria-labelledby=\"dialog_title_0\" role=\"dialog\" class=\"lotusDialogWrapper dijitDialog\" id=\"lconn_share_widget_Dialog_1\" widgetid=\"lconn_share_widget_Dialog_1\"><div class=\"\" data-dojo-attach-point=\"containerNode\"><div class=\"lotusDialogBorder\"><form method=\"POST\" class=\"lotusDialog lotusForm\"><div id=\"dialog_title_0\" class=\"lotusDialogHeader\" aria-label=\"" + label + "\"><h1 class=\"lotusHeading\">" + label + "</h1><a class=\"lotusDialogClose\" href=\"javascript:;\" title=\"Close\" role=\"button\"><img alt=\"Close\" src=\"/connections/resources/web/com.ibm.lconn.core.styles.oneui3/images/blank.gif?etag=20150401.105152\"><span class=\"lotusAltText\">X</span></a></div><div><div class=\"lotusDialogContent\">  <iframe style=\"height: " + windowY + "px; width: " + windowX + "px; border:none\" src=\"" + uri + "\"></iframe></div></div></form></div></div></div>";
 
@@ -333,7 +355,7 @@ icxtbar.util.addIFrameDialog = function (label, uri) {
 }
 
 icxtbar.util.replacePlaceHolders = function (uri, replacementMap) {
-    for ( var key in replacementMap) {
+    for (var key in replacementMap) {
         if (replacementMap.hasOwnProperty(key)) {
             if (uri.indexOf(key) >= 0) {
                 uri = uri.replace(key, replacementMap[key]);
@@ -414,12 +436,12 @@ icxtbar.util.checkAuthenticated = function (cb) {
 
     // The parameters to pass to xhrGet, the url, how to handle it, and the callbacks.
     var xhrArgs = {
-        url : icxtbar.host + "/ic360/ui/cors/auth-internal",
-        withCredentials : true,
-        load : function (data) {
-            if (data == null || data.indexOf('j_security_check') > 0) {
+        url: icxtbar.host + "/ic360/ui/api/context/cors/whoami.json",
+        withCredentials: true,
+        load: function (data) {
+            if (data == null || data.indexOf('j_security_check') > -1 || data.indexOf('<title>Login - ICXT</title>') > -1) {
                 if (dojo.config.isDebug) {
-                    console.log("icxt.util.checkAuthenticated < false - login to '" + icxtbar.host + "/ic360/ui/auth-internal' failed");
+                    console.log("icxt.util.checkAuthenticated < false - login to '" + icxtbar.host + "/ic360/ui/api/context/cors/whoami.json' failed");
                 }
                 // not authenticated - might have gotten login page as response
                 cb("noauth");
@@ -430,7 +452,7 @@ icxtbar.util.checkAuthenticated = function (cb) {
                 console.log("icxt.util.checkAuthenticated < true - login succeeded. set cookie and resolve..");
             }
         },
-        error : function (data) {
+        error: function (data) {
             cb(data);
         }
     };
@@ -458,22 +480,24 @@ icxtbar.util.getNls = function (cb) {
 
     // The parameters to pass to xhrGet, the url, how to handle it, and the callbacks.
     var xhrArgs = {
-        url : icxtbar.host + "/ic360/ui/nls/cors/locale_" + locale + ".json",
-        handleAs : "json",
-        load : function (data) {
+        url: icxtbar.host + "/ic360/ui/nls/cors/locale_" + locale + ".json",
+        handleAs: "json",
+        load: function (data) {
             if (dojo.config.isDebug) {
                 console.log("icxt.util.getNls < data: '" + data + "'");
             }
             cb(null, data);
         },
-        error : function (data) {
+        error: function (data) {
             if (dojo.config.isDebug) {
                 console.log("icxt.util.getNls < error - nls error: '" + data + "'");
             }
             cb(data);
         },
-        withCredentials : true
+        withCredentials: true
     };
+
+    // Call the asynchronous xhrGet
     dojo.xhrGet(xhrArgs);
 };
 var icxtbar = icxtbar || {};
@@ -482,255 +506,276 @@ icxtbar.actions = icxtbar.actions || [];
 icxtbar.nls = icxtbar.nls || {};
 
 if (typeof (dojo) != "undefined") {
-    require([ "dojo/domReady!" ], function () {
-        try {
-            icxtbar.util.loadCSSCors(icxtbar.host + "/ic360/ui/api/res/cors/icxt-sidebar.css");
+    if (!require || require.stack) {} else {
+        require(["dojo/domReady!"], function () {
+            try {
+                var stylesheetUri = icxtbar.host + "/ic360/ui/api/res/cors/icxt-sidebar.css";
+                if (icxtbar.util.checkCSSAccess(stylesheetUri)) {
+                    icxtbar.util.loadCSSCors(stylesheetUri);
 
-            var waitFor = function (callback, elXpath, elXpathRoot, maxInter, waitTime) {
-                if (!elXpathRoot) {
-                    var elXpathRoot = dojo.body();
-                }
-                if (!maxInter) {
-                    var maxInter = 10000; // number of intervals before expiring
-                }
-                if (!waitTime) {
-                    var waitTime = 1; // 1000=1 second
-                }
-                if (!elXpath) {
-                    return;
-                }
-                var waitInter = 0; // current interval
-                var intId = setInterval(function () {
-                    if (++waitInter < maxInter && !dojo.query(elXpath, elXpathRoot).length) {
-                        return;
-                    }
-
-                    clearInterval(intId);
-                    if (waitInter >= maxInter) {
-                        if (dojo.config.isDebug) {
-                            console.log("icxt.ui.waitFor - **** WAITFOR [" + elXpath + "] WATCH EXPIRED!!! interval " + waitInter + " (max:" + maxInter + ")");
+                    var waitFor = function (callback, elXpath, elXpathRoot, maxInter, waitTime) {
+                        if (!elXpathRoot) {
+                            var elXpathRoot = dojo.body();
                         }
-                    } else {
-                        if (dojo.config.isDebug) {
-                            console.log("icxt.ui.waitFor - **** WAITFOR [" + elXpath + "] WATCH TRIPPED AT interval " + waitInter + " (max:" + maxInter + ")");
+                        if (!maxInter) {
+                            var maxInter = 10000; // number of intervals before expiring
                         }
-                        callback();
-                    }
-                }, waitTime);
-            };
-
-            waitFor(function () {
-                if (dojo.config.isDebug) {
-                    console.log("icxt.ui.init > initialize icxt sidebar");
-                }
-
-                if (dojo.config.isDebug) {
-                    console.log("icxt.ui.init - retrieving NLS");
-                }
-                icxtbar.util.getNls(function (err, data) {
-                    if (err) {
-                        if (dojo.config.isDebug) {
-                            console.log("icxt.ui.init - Error retrieving nls: '" + JSON.stringify(err) + "'");
+                        if (!waitTime) {
+                            var waitTime = 1; // 1000=1 second
                         }
-                    }
-                    if (data) {
-                        if (dojo.config.isDebug) {
-                            console.log("icxt.ui.init - retrieved nls data: '" + JSON.stringify(data) + "'");
-                        }
-                        icxtbar.nls = data;
-                    }
-
-                    if (dojo.config.isDebug) {
-                        console.log("icxt.ui.init - check ICXT authentication status");
-                    }
-                    icxtbar.util.checkAuthenticated(function (err) {
-                        if (err) {
-                            if (dojo.config.isDebug) {
-                                console.log("icxt.ui.init - Not authenticated! start OAuth2 Login Flow");
-                            }
-                            icxtbar.util.authenticate();
+                        if (!elXpath) {
                             return;
                         }
-                        if (dojo.config.isDebug) {
-                            console.log("icxt.ui.init - authentication validated.");
-                            console.log("icxt.ui.init - load config properties.");
-                        }
-
-                        // get config props
-                        var parentUrl = encodeURIComponent(window.location.href);
-                        try {
-                            // in case the uri is encoded twice -> window.location.href returns .../wikis/home?lang=de-de#!/wiki/Random%20Wiki%20Entries
-                            // -> sending it as Random%2520Wiki%2520Entries would break the code, so need to encode first, then decode again
-                            parentUrl = encodeURIComponent(decodeURIComponent(window.location.href));
-                        } catch (e) {}
-                        // The parameters to pass to xhrGet, the url, how to handle it, and the callbacks.
-                        var xhrArgs = {
-                            url : icxtbar.host + "/ic360/ui/api/config/cors/props.json?actions=true&context=" + parentUrl,
-                            handleAs : "json",
-                            load : icxtbar.util.loadConfig,
-                            error : function (error) {
-
-                            },
-                            withCredentials : true
-                        };
-
-                        // Call the asynchronous xhrGet
-                        dojo.xhrGet(xhrArgs);
-                    });
-                });
-
-                var d = document;
-                // ICXT Sidebar html
-                var sidebar = d.createElement("div");
-                sidebar.id = "icxt-sidebar";
-                // hide sidebar at start
-                sidebar.style.display = "none";
-
-                // ICXT Sidebar Closed
-                var sidebarC = d.createElement("div");
-                sidebarC.id = "icxt-sidebar-closed";
-                sidebarC.onclick = function () {
-                    var elem = icxtbar.util.getSidebarContainer(true);
-                    elem.style.width = "400px";
-                    elem.focus();
-                }
-
-                // ICXT Sidebar Open
-                var sidebarO = d.createElement("div");
-                sidebarO.id = "icxt-sidebar-open";
-                sidebarO.tabIndex = "0";
-
-                var icxtImg = d.createElement("img");
-                icxtImg.src = icxtbar.host + "/ic360/res/client/assets/images/icons/engine-100-white.png";
-                sidebarC.appendChild(icxtImg);
-
-                sidebarO.addEventListener('focusout', function (evt) {
-                    if (sidebarO.contains(evt.relatedTarget)) {
-                        // focusout detected, but active node is child of sidebar
-                        return;
-                    }
-
-                    var elem = icxtbar.util.getSidebarContainer(true);
-                    elem.style.width = "0px";
-                });
-
-                var sidebarContent = d.createElement("div");
-                sidebarContent.className = "icxt-sidebar-content";
-
-                var sidebarOHeadline = d.createElement("h2");
-                sidebarOHeadline.innerHTML = "IBM Connections Extension Toolkit";
-                sidebarContent.appendChild(sidebarOHeadline);
-
-                var sidebarOList = d.createElement("div");
-                sidebarOList.id = "icxt-sidebar-actionsList";
-                sidebarContent.appendChild(sidebarOList);
-                sidebarO.appendChild(sidebarContent);
-
-                sidebar.appendChild(sidebarC);
-                sidebar.appendChild(sidebarO);
-
-                d.querySelector("body").appendChild(sidebar);
-
-                // add event listener to reload page
-                window.onmessage = function (event) {
-                    if (dojo.config.isDebug) {
-                        console.log("icxt.event.message > got message: " + event.data);
-                    }
-                    try {
-                        if (event && event.data && event.data.indexOf("icxtbar") < 0) {
-                            // only handle icxtbar events here
-                            return;
-                        }
-                        if (event.data === 'icxtbar.loginSuccess') {
-                            if (dojo.config.isDebug) {
-                                console.log("icxt.event.message - user logged in, refresh ICXT");
-                            }
-                            location.reload();
-                        }
-                    } catch (e) {
-                        if (dojo.config.isDebug) {
-                            console.log("icxt.event.message - caught exception when evaluating event");
-                        }
-                    }
-                }
-
-                function getIcxtContext() {
-                    if (dojo.config.isDebug) {
-                        console.log("icxt.getIcxtContext >");
-                    }
-                    if (!icxtbar) {
-                        console.log("icxt.getIcxtContext < sidebar not available anymore");
-                        return;
-                    }
-
-                    icxtbar.util.toggleSidebarContainer(false, true);
-                    icxtbar.util.resetActions();
-
-                    // get config props
-                    var parentUrl = encodeURIComponent(window.location.href);
-                    try {
-                        // in case the uri is encoded twice -> window.location.href returns .../wikis/home?lang=de-de#!/wiki/Random%20Wiki%20Entries
-                        // -> sending it as Random%2520Wiki%2520Entries would break the code, so need to encode first, then decode again
-                        parentUrl = encodeURIComponent(decodeURIComponent(window.location.href));
-                    } catch (e) {}
-                    if (dojo.config.isDebug) {
-                        console.log("icxt.getIcxtContext - evaluate icxt context for '" +parentUrl+ "'");
-                    }
-                    // The parameters to pass to xhrGet, the url, how to handle it, and the callbacks.
-                    var xhrArgs = {
-                        url : icxtbar.host + "/ic360/ui/api/config/cors/props.json?actions=true&context=" + parentUrl,
-                        handleAs : "json",
-                        load : icxtbar.util.loadConfig,
-                        error : function (error) {
-
-                        },
-                        withCredentials : true
-                    };
-                    // Call the asynchronous xhrGet
-                    dojo.xhrGet(xhrArgs);
-                }
-
-                window.onhashchange = getIcxtContext;
-
-                // add scroll listener
-                var scrolling = false;
-                var scrollSpeed = 50;
-                window.onscroll = function () {
-                    scrolling = true;
-                };
-
-                setInterval(function () {
-                    if (scrolling) {
-                        if (sidebarO.style.display === 'none') {
-                            return;
-                        }
-
-                        // check if nav disappears or appears -> need to change height for icxt sidebar
-                        var nav = d.querySelector("#nav_bar_include");
-                        if (nav) {
-                            var opacity = nav.style.opacity;
-                            if (opacity < 1 && opacity >= 0) {
-                                sidebarO.style.top = Math.round(40 * opacity) + "px";
-                                scrollSpeed = 1;
+                        var waitInter = 0; // current interval
+                        var intId = setInterval(function () {
+                            if (++waitInter < maxInter && !dojo.query(elXpath, elXpathRoot).length) {
                                 return;
-                            } else if (opacity >= 1) {
-                                scrollSpeed = 100;
-                                sidebarO.style.top = "40px";
-                            } else if (opacity < 0) {
-                                sidebarO.style.top = "0px";
+                            }
+
+                            clearInterval(intId);
+                            if (waitInter >= maxInter) {
+                                if (dojo.config.isDebug) {
+                                    console.log("icxt.ui.waitFor - **** WAITFOR [" + elXpath + "] WATCH EXPIRED!!! interval " + waitInter + " (max:" + maxInter + ")");
+                                }
+                            } else {
+                                if (dojo.config.isDebug) {
+                                    console.log("icxt.ui.waitFor - **** WAITFOR [" + elXpath + "] WATCH TRIPPED AT interval " + waitInter + " (max:" + maxInter + ")");
+                                }
+                                callback();
+                            }
+                        }, waitTime);
+                    };
+
+                    waitFor(function () {
+                        if (dojo.config.isDebug) {
+                            console.log("icxt.ui.init > initialize icxt sidebar");
+                        }
+
+                        if (dojo.config.isDebug) {
+                            console.log("icxt.ui.init - retrieving NLS");
+                        }
+                        icxtbar.util.getNls(function (err, data) {
+                            if (err) {
+                                if (dojo.config.isDebug) {
+                                    console.log("icxt.ui.init - Error retrieving nls: '" + JSON.stringify(err) + "'");
+                                }
+                            }
+                            if (data) {
+                                if (dojo.config.isDebug) {
+                                    console.log("icxt.ui.init - retrieved nls data: '" + JSON.stringify(data) + "'");
+                                }
+                                icxtbar.nls = data;
+                            }
+
+                            if (dojo.config.isDebug) {
+                                console.log("icxt.ui.init - check ICXT authentication status");
+                            }
+                            icxtbar.util.checkAuthenticated(function (err) {
+                                if (err) {
+                                    if (dojo.config.isDebug) {
+                                        console.log("icxt.ui.init - Not authenticated! start OAuth2 Login Flow");
+                                    }
+
+                                    // in case the user needs to authenticate, show the sidebar icon
+                                    var sidebar = document.querySelector("#icxt-sidebar");
+                                    sidebar.style.display = "block";
+
+                                    icxtbar.util.authenticate();
+                                    return;
+                                }
+                                if (dojo.config.isDebug) {
+                                    console.log("icxt.ui.init - authentication validated.");
+                                    console.log("icxt.ui.init - load config properties.");
+                                }
+
+                                // get config props
+                                var parentUrl = encodeURIComponent(window.location.href);
+                                try {
+                                    // in case the uri is encoded twice -> window.location.href returns .../wikis/home?lang=de-de#!/wiki/Random%20Wiki%20Entries
+                                    // -> sending it as Random%2520Wiki%2520Entries would break the code, so need to encode first, then decode again
+                                    parentUrl = encodeURIComponent(decodeURIComponent(window.location.href));
+                                } catch (e) {}
+                                // The parameters to pass to xhrGet, the url, how to handle it, and the callbacks.
+                                var xhrArgs = {
+                                    url: icxtbar.host + "/ic360/ui/api/config/cors/props.json?actions=true&context=" + parentUrl,
+                                    handleAs: "json",
+                                    load: icxtbar.util.loadConfig,
+                                    error: function (error) {
+
+                                    },
+                                    withCredentials: true
+                                };
+
+                                // Call the asynchronous xhrGet
+                                dojo.xhrGet(xhrArgs);
+                            });
+                        });
+
+                        var d = document;
+                        // ICXT Sidebar html
+                        var sidebar = d.createElement("div");
+                        sidebar.id = "icxt-sidebar";
+                        // hide sidebar at start
+                        sidebar.style.display = "none";
+
+                        // ICXT Sidebar Closed
+                        var sidebarC = d.createElement("div");
+                        sidebarC.id = "icxt-sidebar-closed";
+                        sidebarC.onclick = function () {
+                            var elem = icxtbar.util.getSidebarContainer(true);
+                            elem.style.width = "400px";
+                            elem.focus();
+                        }
+
+                        // ICXT Sidebar Open
+                        var sidebarO = d.createElement("div");
+                        sidebarO.id = "icxt-sidebar-open";
+                        sidebarO.tabIndex = "0";
+
+                        var icxtImg = d.createElement("img");
+                        icxtImg.src = icxtbar.host + "/ic360/res/client/assets/images/icons/engine-100-white.png";
+                        sidebarC.appendChild(icxtImg);
+
+                        sidebarO.addEventListener('focusout', function (evt) {
+                            if (sidebarO.contains(evt.relatedTarget)) {
+                                // focusout detected, but active node is child of sidebar
+                                return;
+                            }
+
+                            var elem = icxtbar.util.getSidebarContainer(true);
+                            elem.style.width = "0px";
+                        });
+
+                        var sidebarContent = d.createElement("div");
+                        sidebarContent.className = "icxt-sidebar-content";
+
+                        var sidebarOHeadline = d.createElement("h2");
+                        sidebarOHeadline.innerHTML = "IBM Connections Extension Toolkit";
+                        sidebarContent.appendChild(sidebarOHeadline);
+
+                        var sidebarOList = d.createElement("div");
+                        sidebarOList.id = "icxt-sidebar-actionsList";
+                        sidebarContent.appendChild(sidebarOList);
+                        sidebarO.appendChild(sidebarContent);
+
+                        sidebar.appendChild(sidebarC);
+                        sidebar.appendChild(sidebarO);
+
+                        d.querySelector("body").appendChild(sidebar);
+
+                        // add event listener to reload page
+                        window.onmessage = function (event) {
+                            if (dojo.config.isDebug) {
+                                console.log("icxt.event.message > got message: " + event.data);
+                            }
+                            try {
+                                if (event && event.data && event.data.indexOf("icxtbar") < 0) {
+                                    // only handle icxtbar events here
+                                    return;
+                                }
+                                if (event.data === 'icxtbar.loginSuccess') {
+                                    if (dojo.config.isDebug) {
+                                        console.log("icxt.event.message - user logged in, refresh ICXT");
+                                    }
+                                    location.reload();
+                                }
+                            } catch (e) {
+                                if (dojo.config.isDebug) {
+                                    console.log("icxt.event.message - caught exception when evaluating event");
+                                }
                             }
                         }
-                        scrolling = false;
-                    }
-                }, scrollSpeed);
 
-                if (dojo.config.isDebug) {
-                    console.log("icxt.ui.init < sidebar initialized");
+                        function getIcxtContext(_function) {
+                            if (dojo.config.isDebug) {
+                                console.log("icxt.getIcxtContext >");
+                            }
+                            // first execute previous method if exists
+                            if (_function) {
+                                _function();
+                            }
+
+                            if (!icxtbar) {
+                                if (dojo.config.isDebug) {
+                                    console.log("icxt.getIcxtContext < sidebar not available anymore");
+                                }
+                                return;
+                            }
+
+                            // get config props
+                            var parentUrl = encodeURIComponent(window.location.href);
+                            icxtbar.util.toggleSidebarContainer(false, true);
+                            icxtbar.util.resetActions();
+                            try {
+                                // in case the uri is encoded twice -> window.location.href returns .../wikis/home?lang=de-de#!/wiki/Random%20Wiki%20Entries
+                                // -> sending it as Random%2520Wiki%2520Entries would break the code, so need to encode first, then decode again
+                                parentUrl = encodeURIComponent(decodeURIComponent(window.location.href));
+                            } catch (e) {}
+                            if (dojo.config.isDebug) {
+                                console.log("icxt.getIcxtContext - evaluate icxt context for '" + parentUrl + "'");
+                            }
+                            // The parameters to pass to xhrGet, the url, how to handle it, and the callbacks.
+                            var xhrArgs = {
+                                url: icxtbar.host + "/ic360/ui/api/config/cors/props.json?actions=true&context=" + parentUrl,
+                                handleAs: "json",
+                                load: icxtbar.util.loadConfig,
+                                error: function (error) {
+
+                                },
+                                withCredentials: true
+                            };
+                            // Call the asynchronous xhrGet
+                            dojo.xhrGet(xhrArgs);
+                        }
+
+                        var _currentOnHashChangeMethod = window.onhashchange;
+                        window.onhashchange = function () {
+                            // call get icxt context
+                            getIcxtContext(_currentOnHashChangeMethod);
+                        }
+
+                        icxtbar.util.__navbarHeight = 45;
+
+                        function repositionUI(_function) {
+                            // first execute previous method if exists
+                            if (_function) {
+                                _function();
+                            }
+
+                            if (!icxtbar.util.__navbarHeight) {
+                                icxtbar.util.__navbarHeight = 45;
+                            }
+
+                            var scrollTop = (window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+                            if (scrollTop >= 48) {
+                                sidebarC.style.top = '72px';
+                                sidebarO.style.top = '0px';
+                            } else if (scrollTop <= 0) {
+                                sidebarC.style.top = '120px';
+                                sidebarO.style.top = icxtbar.util.__navbarHeight + 'px';
+                            } else {
+                                // somewhere inbetween - calculate
+                                sidebarC.style.top = (120 - scrollTop) + 'px';
+                                sidebarO.style.top = (icxtbar.util.__navbarHeight - scrollTop) + 'px';
+                            }
+                        }
+
+                        var _currentOnScrollMethod = window.onscroll;
+                        window.onscroll = function () {
+                            repositionUI(_currentOnScrollMethod);
+                        }
+
+                        repositionUI(null);
+
+                        if (dojo.config.isDebug) {
+                            console.log("icxt.ui.init < sidebar initialized");
+                        }
+
+                    }, ".lotusContent");
                 }
-
-            }, ".lotusContent");
-        } catch (e) {
-            alert("Exception occurred in ICXT.sidebar: " + e);
-        }
-    });
+            } catch (e) {
+                console.log("Exception occurred in ICXT.sidebar: " + e);
+            }
+        });
+    }
 };
